@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentRole } from "@/lib/auth";
 import * as api from "@/api/pages";
@@ -16,18 +16,18 @@ export default function AdminPage() {
   const role = getCurrentRole();
   const [pages, setPages] = useState<Page[]>([]);
 
+  const refreshPages = useCallback(() => {
+    const res = api.listPages(role);
+    if (res.success && res.data) setPages(res.data);
+  }, [role]);
+
   useEffect(() => {
     if (role !== "admin" && role !== "super-admin") {
       router.replace("/login");
       return;
     }
     refreshPages();
-  }, [role]);
-
-  const refreshPages = () => {
-    const res = api.listPages(role);
-    if (res.success && res.data) setPages(res.data);
-  };
+  }, [role, refreshPages, router]);
 
   const handlePublish = (id: string) => {
     const res = api.publishPage(role, id);
@@ -63,10 +63,16 @@ export default function AdminPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push("/editor")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/editor")}>
             Editor View
           </Button>
-          <Button variant="outline" size="sm" onClick={() => router.push("/login")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/login")}>
             Switch Role
           </Button>
         </div>
@@ -74,7 +80,9 @@ export default function AdminPage() {
 
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">Manage Pages</h2>
-        {pages.length === 0 && <p className="text-muted-foreground text-sm">No pages yet.</p>}
+        {pages.length === 0 && (
+          <p className="text-muted-foreground text-sm">No pages yet.</p>
+        )}
         {pages.map((page) => (
           <Card key={page.id}>
             <CardContent className="flex items-center justify-between py-4">
@@ -90,8 +98,7 @@ export default function AdminPage() {
                     page.status === "published"
                       ? "bg-success text-success-foreground"
                       : "bg-warning text-warning-foreground"
-                  }
-                >
+                  }>
                   {page.status}
                 </Badge>
                 {page.status === "draft" ? (
@@ -99,12 +106,18 @@ export default function AdminPage() {
                     <Globe className="h-4 w-4 mr-1" /> Publish
                   </Button>
                 ) : (
-                  <Button size="sm" variant="outline" onClick={() => handleUnpublish(page.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleUnpublish(page.id)}>
                     <GlobeLock className="h-4 w-4 mr-1" /> Unpublish
                   </Button>
                 )}
                 {role === "super-admin" && (
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(page.id)}>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDelete(page.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}

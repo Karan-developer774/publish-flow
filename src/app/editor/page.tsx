@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, getCurrentRole } from "@/lib/auth";
 import * as api from "@/api/pages";
@@ -24,18 +24,21 @@ export default function EditorPage() {
   const [content, setContent] = useState("");
   const [isNew, setIsNew] = useState(false);
 
+  const refreshPages = useCallback(() => {
+    const res = api.listPages(role);
+    if (res.success && res.data) setPages(res.data);
+  }, [role]);
+
   useEffect(() => {
-    if (!user || (role !== "editor" && role !== "admin" && role !== "super-admin")) {
+    if (
+      !user ||
+      (role !== "editor" && role !== "admin" && role !== "super-admin")
+    ) {
       router.replace("/login");
       return;
     }
     refreshPages();
-  }, [role, user]);
-
-  const refreshPages = () => {
-    const res = api.listPages(role);
-    if (res.success && res.data) setPages(res.data);
-  };
+  }, [role, user, refreshPages, router]);
 
   const handleNew = () => {
     setIsNew(true);
@@ -96,7 +99,10 @@ export default function EditorPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push("/login")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/login")}>
             Switch Role
           </Button>
           <Button size="sm" onClick={handleNew}>
@@ -108,8 +114,16 @@ export default function EditorPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>{isNew ? "Create New Page" : `Editing: ${editing?.title}`}</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => { setEditing(null); setIsNew(false); }}>
+              <CardTitle>
+                {isNew ? "Create New Page" : `Editing: ${editing?.title}`}
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditing(null);
+                  setIsNew(false);
+                }}>
                 <ArrowLeft className="h-4 w-4 mr-1" /> Back
               </Button>
             </div>
@@ -118,37 +132,69 @@ export default function EditorPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium">Title</label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Page title" />
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Page title"
+                />
               </div>
               {isNew && (
                 <div className="space-y-1">
                   <label className="text-sm font-medium">Slug</label>
-                  <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="page-slug" />
+                  <Input
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    placeholder="page-slug"
+                  />
                 </div>
               )}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">Content</label>
-              <Textarea value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write your page content here..." rows={12} className="font-mono text-sm" />
+              <Textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Write your page content here..."
+                rows={12}
+                className="font-mono text-sm"
+              />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleSave}><Save className="h-4 w-4 mr-1" /> Save Draft</Button>
-              <Button variant="outline" onClick={handlePreview}><Eye className="h-4 w-4 mr-1" /> Preview</Button>
+              <Button onClick={handleSave}>
+                <Save className="h-4 w-4 mr-1" /> Save Draft
+              </Button>
+              <Button variant="outline" onClick={handlePreview}>
+                <Eye className="h-4 w-4 mr-1" /> Preview
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">All Pages</h2>
-        {pages.length === 0 && <p className="text-muted-foreground text-sm">No pages yet. Create your first page.</p>}
+        {pages.length === 0 && (
+          <p className="text-muted-foreground text-sm">
+            No pages yet. Create your first page.
+          </p>
+        )}
         {pages.map((page) => (
-          <Card key={page.id} className="cursor-pointer hover:border-muted-foreground/30 transition-colors" onClick={() => handleEdit(page)}>
+          <Card
+            key={page.id}
+            className="cursor-pointer hover:border-muted-foreground/30 transition-colors"
+            onClick={() => handleEdit(page)}>
             <CardContent className="flex items-center justify-between py-4">
               <div>
                 <p className="font-medium">{page.title}</p>
                 <p className="text-sm text-muted-foreground">/{page.slug}</p>
               </div>
-              <Badge className={page.status === "published" ? "bg-success text-success-foreground" : "bg-warning text-warning-foreground"}>{page.status}</Badge>
+              <Badge
+                className={
+                  page.status === "published"
+                    ? "bg-success text-success-foreground"
+                    : "bg-warning text-warning-foreground"
+                }>
+                {page.status}
+              </Badge>
             </CardContent>
           </Card>
         ))}

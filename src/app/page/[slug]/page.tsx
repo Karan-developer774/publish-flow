@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
 
 export default function PageView() {
-  const params = useParams();
-  const slug = params.slug as string;
   const router = useRouter();
+  const params = useParams();
+  if (!params) return <div>Loading...</div>;
+  const slug = params.slug as string;
   const role = getCurrentRole();
 
   const res = slug ? api.getPage(role, slug) : null;
@@ -27,7 +28,9 @@ export default function PageView() {
               ? "You do not have permission to view this page."
               : "This page does not exist or is not published."}
           </p>
-          <p className="text-sm text-muted-foreground">Status: {res?.status || 404}</p>
+          <p className="text-sm text-muted-foreground">
+            Status: {res?.status || 404}
+          </p>
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Go Back
           </Button>
@@ -49,8 +52,7 @@ export default function PageView() {
             page.status === "published"
               ? "bg-success text-success-foreground"
               : "bg-warning text-warning-foreground"
-          }
-        >
+          }>
           {page.status}
         </Badge>
       </div>
