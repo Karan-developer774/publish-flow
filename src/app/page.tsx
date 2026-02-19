@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { getCurrentRole } from "@/lib/auth";
+import { Role } from "@/types/page";
 import * as api from "@/api/pages";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,9 +12,14 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function HomePage() {
   const router = useRouter();
-  const role = getCurrentRole();
+  const [role, setRole] = useState<Role | undefined>(undefined);
   const res = api.listPages(role);
   const pages = res.success && res.data ? res.data : [];
+
+  useEffect(() => {
+    setRole(getCurrentRole());
+  }, []);
+
   const publishedPages = pages.filter((p) => p.status === "published");
 
   return (
